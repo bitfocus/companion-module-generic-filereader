@@ -1,5 +1,7 @@
+const { combineRgb } = require('@companion-module/base')
+
 module.exports = {
-	presets() {
+	initPresets() {
 		let self = this;
 		
 		const presets = []

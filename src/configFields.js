@@ -1,8 +1,10 @@
+const { Regex } = require('@companion-module/base')
+
 module.exports = {
-	config_fields() {
+	getConfigFields() {
 		return [
 			{
-				type: 'text',
+				type: 'static-text',
 				id: 'info',
 				width: 12,
 				label: 'Information',
@@ -21,24 +23,17 @@ module.exports = {
 				width: 6,
 				label: 'File Encoding',
 				default: 'utf8',
-				choices: [
-					{ id: 'utf8', label: 'utf8'},
-					{ id: 'utf16le', label: 'utf16le'},
-					{ id: 'latin1', label: 'latin1'},
-					{ id: 'base64', label: 'base64'},
-					{ id: 'base64url', label: 'base64url'},
-					{ id: 'hex', label: 'hex'}
-				]
+				choices: this.ENCODING_TYPES
 			},
 			{
 				type: 'number',
 				id: 'rate',
 				width: 6,
-				label: 'Re-Read Rate (in ms)',
+				label: 'Re-Read Rate (in ms) (set to 0 to read file once and not again unless manually activated)',
 				default: 60000
 			},
 			{
-				type: 'text',
+				type: 'static-text',
 				id: 'dummy2',
 				width: 12,
 				label: ' ',

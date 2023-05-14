@@ -1,4 +1,6 @@
-var InstanceSkel = require('../../instance_skel');
+const { InstanceBase, InstanceStatus, runEntrypoint } = require('@companion-module/base')
+
+const UpgradeScripts = require('./src/upgrades');
 
 const configFields = require('./src/configFields');
 const api = require('./src/api');
@@ -7,16 +9,11 @@ const variables = require('./src/variables');
 const feedbacks = require('./src/feedbacks');
 const presets = require('./src/presets');
 
-class GenericFileReaderInstance extends InstanceSkel {
-	constructor(system, id, config) {
-		super(system, id, config)
-
-		this.config = config
+class GenericFileReaderInstance extends InstanceBase {
+	constructor(internal) {
+		super(internal)
 
 		this.INTERVAL = null;
-
-		this.filecontents = '';
-		this.datetime = '';
 
 		// Assign the methods from the listed files to this class
 		Object.assign(this, {
@@ -27,46 +24,54 @@ class GenericFileReaderInstance extends InstanceSkel {
 			...feedbacks,
 			...presets,			
 		})
+
+		this.filecontents = '';
+		this.datetime = '';
+
+		this.ENCODING_TYPES = [
+			{ id: 'utf8', label: 'utf8'},
+			{ id: 'utf16le', label: 'utf16le'},
+			{ id: 'latin1', label: 'latin1'},
+			{ id: 'base64', label: 'base64'},
+			{ id: 'base64url', label: 'base64url'},
+			{ id: 'hex', label: 'hex'}
+		];
 	}
 
-	init() {
-		this.status(this.STATUS_UNKNOWN);
-
-		// Update the config
-		this.updateConfig();
+	async init(config) {
+		this.updateStatus(InstanceStatus.Connecting);
+		this.configUpdated(config);
 	}
 
-	updateConfig(config) {
+	async configUpdated(config) {
 		if (config) {
 			this.config = config
 		}
 
+		this.updateStatus(InstanceStatus.Ok);
+
+		this.stopInterval();
+
+		this.initActions();
+		this.initFeedbacks();
+		this.initVariables();
+		this.initPresets();
+
+		this.checkVariables();
+		this.checkFeedbacks();
+
 		// Quickly check if certain config values are present and continue setup
-		if (this.config.path) {
+		if (this.config.path !== '') {
 			if (this.INTERVAL) {
 				this.stopInterval();
 			}
 
-			// Init the Actions
-			this.actions();
-
-			// Init and Update Variables
-			this.updateVariableDefinitions();
-			this.checkVariables();
-
-			// Init the Feedbacks
-			this.feedbacks();
-
-			// Init the Presets
-			this.presets();
-
-			this.status(this.STATUS_UNKNOWN);
-
+			this.updateStatus(InstanceStatus.Connecting, 'Opening File...');
 			this.openFile();
 		}
 	}
 
-	destroy() {
+	async destroy() {
 		//close out any connections
 		this.stopInterval();
 
@@ -74,4 +79,4 @@ class GenericFileReaderInstance extends InstanceSkel {
 	}
 }
 
-module.exports = GenericFileReaderInstance;
+runEntrypoint(GenericFileReaderInstance, UpgradeScripts)

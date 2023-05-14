@@ -1,9 +1,9 @@
 module.exports = {
-	updateVariableDefinitions() {
+	initVariables() {
 		let variables = [
-			{ label: 'File Path', name: 'path'},
-			{ label: 'File Contents', name: 'contents'},
-			{ label: 'Last Date/Time Read', name: 'datetime'},
+			{ name: 'File Path', variableId: 'path'},
+			{ name: 'File Contents', variableId: 'contents'},
+			{ name: 'Last Date/Time Read', variableId: 'datetime'},
 		]
 
 		this.setVariableDefinitions(variables);
@@ -11,9 +11,13 @@ module.exports = {
 
 	checkVariables() {
 		try {
-			this.setVariable('path', this.config.path);
-			this.setVariable('contents', this.filecontents);
-			this.setVariable('datetime', this.datetime);
+			let variableObj = {};
+
+			variableObj['path'] = this.config.path;
+			variableObj['contents'] = this.filecontents;
+			variableObj['datetime'] = this.datetime;
+
+			this.setVariableValues(variableObj);
 		}
 		catch(error) {
 			//do something with that error

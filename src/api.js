@@ -1,3 +1,5 @@
+const { InstanceStatus } = require('@companion-module/base')
+
 const fs = require('fs');
 
 module.exports = {
@@ -32,12 +34,12 @@ module.exports = {
 	
 			fs.readFile(path, encoding, (err, data) => {
 				if (err) {
-					this.status(this.STATUS_ERROR);
+					this.updateStatus(InstanceStatus.BadConfig, 'Error Reading File');
 					self.log('error', 'Error reading file: ' + err);
 					self.stopInterval();
 				}
 				else {
-					this.status(this.STATUS_OK);
+					this.updateStatus(InstanceStatus.Ok);
 					self.filecontents = data;
 					self.datetime = new Date().toISOString().replace('T', ' ').substr(0, 19);
 					self.checkVariables();
@@ -46,6 +48,28 @@ module.exports = {
 		}
 		catch(error) {
 			self.log('error', 'Error Reading File: ' + error);
+		}
+	},
+
+	readFileCustom(path, encoding, customVariable) {
+		let self = this;
+
+		try {
+			if (self.config.verbose) {
+				self.log('debug', 'Opening File: ' + path);
+			}
+	
+			fs.readFile(path, encoding, (err, data) => {
+				if (err) {
+					self.log('error', 'Error reading custom file path: ' + err);
+				}
+				else {
+					this.setCustomVariableValue(customVariable, data);
+				}
+			});
+		}
+		catch(error) {
+			self.log('error', 'Error Reading custom file path: ' + error);
 		}
 	},
 

@@ -1,28 +1,19 @@
 {
 	"name": "generic-filereader",
-	"version": "1.0.0",
-	"api_version": "1.0.0",
-	"keywords": [
-		"File"
-	],
-	"manufacturer": "Generic",
-	"product": "File Reader",
-	"shortname": "generic-filereader",
-	"homepage": "https://github.com/bitfocus/companion-module-generic-filereader#readme",
-	"description": "Opens a local file and pulls the contents into a variable for processing.",
+	"version": "2.0.0",
 	"main": "index.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
-	"author": "Joseph Adams <josephdadams@gmail.com>",
 	"license": "MIT",
 	"dependencies": {
-	},
-	"bugs": {
-		"url": "https://github.com/bitfocus/companion-module-generic-filereader/issues"
+		"@companion-module/base": "~1.4.1"
 	},
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/bitfocus/companion-module-generic-filereader.git"
+	},
+	"devDependencies": {
+		"@companion-module/tools": "^1.2.1"
 	}
 }
