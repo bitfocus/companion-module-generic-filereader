@@ -1,6 +1,7 @@
 const { InstanceStatus } = require('@companion-module/base')
 
 const fs = require('fs');
+const readline = require('readline');
 
 module.exports = {
 	openFile() {
@@ -34,12 +35,12 @@ module.exports = {
 	
 			fs.readFile(path, encoding, (err, data) => {
 				if (err) {
-					this.updateStatus(InstanceStatus.BadConfig, 'Error Reading File');
+					self.updateStatus(InstanceStatus.BadConfig, 'Error Reading File');
 					self.log('error', 'Error reading file: ' + err);
 					self.stopInterval();
 				}
 				else {
-					this.updateStatus(InstanceStatus.Ok);
+					self.updateStatus(InstanceStatus.Ok);
 					self.filecontents = data;
 					self.datetime = new Date().toISOString().replace('T', ' ').substr(0, 19);
 					self.checkVariables();
@@ -64,12 +65,43 @@ module.exports = {
 					self.log('error', 'Error reading custom file path: ' + err);
 				}
 				else {
-					this.setCustomVariableValue(customVariable, data);
+					self.setCustomVariableValue(customVariable, data);
 				}
 			});
 		}
 		catch(error) {
 			self.log('error', 'Error Reading custom file path: ' + error);
+		}
+	},
+
+	readLine(lineNumber, path, customVariable) {
+		let self = this;
+
+		let lineIndex = 0;
+
+		try {
+			if (self.config.verbose) {
+				self.log('debug', 'Opening File: ' + path);
+				self.log('debug', 'Reading Line: ' + lineNumber);
+			}
+
+			const fileStream = fs.createReadStream(path);
+
+			const rl = readline.createInterface({
+				input: fileStream,
+				crlfDelay: Infinity
+			});
+
+			rl.on('line', (line) => {
+				lineIndex++;
+				if (lineIndex == lineNumber) {
+					self.setCustomVariableValue(customVariable, line);
+					rl.close();
+				}
+			});
+		}
+		catch(error) {
+			self.log('error', 'Error Reading Line Number: ' + error);
 		}
 	},
 
