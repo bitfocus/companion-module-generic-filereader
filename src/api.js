@@ -5,7 +5,7 @@ const readline = require('readline');
 
 module.exports = {
 	openFile() {
-		let self = this; // required to have reference to outer `this`
+		let self = this;
 		
 		const rate = self.config.rate;
 
@@ -32,20 +32,41 @@ module.exports = {
 			if (self.config.verbose) {
 				self.log('debug', 'Opening File: ' + path);
 			}
-	
-			fs.readFile(path, encoding, (err, data) => {
-				if (err) {
-					self.updateStatus(InstanceStatus.BadConfig, 'Error Reading File');
-					self.log('error', 'Error reading file: ' + err);
-					self.stopInterval();
+
+			if (fs.existsSync(path)) {
+				self.updateStatus(InstanceStatus.Ok);
+				self.EXISTS = true;
+				self.checkFeedbacks();
+
+				if (self.config.verbose) {
+					self.log('debug', 'Reading File: ' + path);
 				}
-				else {
-					self.updateStatus(InstanceStatus.Ok);
-					self.filecontents = data;
-					self.datetime = new Date().toISOString().replace('T', ' ').substr(0, 19);
-					self.checkVariables();
+
+				fs.readFile(path, encoding, (err, data) => {
+					if (err) {
+						self.updateStatus(InstanceStatus.BadConfig, 'Error Reading File');
+						self.log('error', 'Error reading file: ' + err);
+						self.stopInterval();
+					}
+					else {
+						self.updateStatus(InstanceStatus.Ok);
+						self.filecontents = data;
+						self.datetime = new Date().toISOString().replace('T', ' ').substr(0, 19);
+						self.checkVariables();
+					}
+				});
+			}
+			else {
+				self.updateStatus(InstanceStatus.ConnectionFailure, 'File Does Not Exist');
+				self.checkFeedbacks();
+				
+				if (self.config.verbose) {
+					self.log('debug', 'File Does Not Exist: ' + path);
 				}
-			});
+
+				self.EXISTS = false;
+				self.stopInterval();
+			}			
 		}
 		catch(error) {
 			self.log('error', 'Error Reading File: ' + error);
