@@ -39,7 +39,7 @@ module.exports = {
 			],
 			callback: async function (action) {
 				let path = await self.parseVariablesInString(action.options.path)
-				self.readFileCustom(path, action.options.encoding, action.options.customVariable);
+				await self.readFileCustom(path, action.options.encoding, action.options.customVariable);
 			}
 		};
 
@@ -52,7 +52,7 @@ module.exports = {
 					description: 'Line Number to read. Accepts variables and value must be an integer',
 					id: 'line',
 					default: '1',
-					useVariables: true
+					useVariables: {local: true}
 				},
 				{
 					type: 'custom-variable',
@@ -61,13 +61,19 @@ module.exports = {
 				},
 			],
 			callback: async function (action) {
-				let line = await self.parseVariablesInString(action.options.line);
-				let lineNumber = parseInt(line);
+				let lineStr = await self.parseVariablesInString(action.options.line);
+				let lineNumber = parseInt(lineStr);
 				if (isNaN(lineNumber)) {
-					self.log('Line Number must be an integer', 'error');
-					return;
+					self.log('error', 'Line Number must be an integer');
+					return Promise.reject('Line Number must be an integer')
 				}
-				self.readLine(lineNumber, self.config.path, action.options.customVariable);
+				if (!action.options.customVariable) {
+					self.log('error', 'No custom variable given for Read Specific Line');
+					return Promise.reject('No custom variable given for Read Specific Line')
+				}
+
+				const lineData = await self.readLine(lineNumber, `${self.config.path}`)
+				self.setCustomVariableValue(action.options.customVariable, lineData)
 			}
 		};
 
@@ -102,10 +108,20 @@ module.exports = {
 
 				let lineNumber = parseInt(line);
 				if (isNaN(lineNumber)) {
-					self.log('Line Number must be an integer', 'error');
-					return;
+					self.log('error', 'Line Number must be an integer');
+					return Promise.reject('Line Number must be an integer')
 				}
-				self.readLine(lineNumber, path, action.options.customVariable);
+				if (!action.options.customVariable) {
+					self.log('error', 'No custom variable given for Read Specific Line');
+					return Promise.reject('No custom variable given for Read Specific Line')
+				}
+				if (!path) {
+					self.log('error', 'No path given for Read Specific Line');
+					return Promise.reject('No custom variable given for Read Specific Line')
+				}
+
+				const lineData = await self.readLine(lineNumber, path)
+				self.setCustomVariableValue(action.options.customVariable, lineData)
 			}
 		};
 

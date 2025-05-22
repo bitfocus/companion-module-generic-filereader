@@ -4,126 +4,160 @@ const fs = require('fs');
 const readline = require('readline');
 
 module.exports = {
-	openFile() {
+	async openFile() {
 		let self = this;
 		
 		const rate = self.config.rate;
 
-		self.readFile();
-
-		if (rate > 0) {
-			if (self.config.verbose) {
-				self.log('debug', 'Creating Interval. File will be read every ' + rate + ' ms.');
-			}
-			self.INTERVAL = setInterval(self.readFile.bind(self), rate);
-		}
-		else {
-			self.log('info', 'Retry Rate is 0. Module will open file one time and not read it again unless manually activated.');
-		}
-	},
-
-	readFile() {
-		let self = this;
-	
-		let path = self.config.path;
-		let encoding = self.config.encoding;
-	
 		try {
-			if (self.config.verbose) {
-				self.log('debug', 'Opening File: ' + path);
-			}
-
-			if (fs.existsSync(path)) {
-				self.updateStatus(InstanceStatus.Ok);
-				self.EXISTS = true;
-				self.checkFeedbacks();
-
+			const data = await self.readFile()
+			self.filecontents = data.toString()
+	
+			if (rate > 999) {
 				if (self.config.verbose) {
-					self.log('debug', 'Reading File: ' + path);
+					self.log('debug', 'Creating Interval. File will be read every ' + rate + ' ms.');
 				}
-
-				fs.readFile(path, encoding, (err, data) => {
-					if (err) {
-						self.updateStatus(InstanceStatus.BadConfig, 'Error Reading File');
-						self.log('error', 'Error reading file: ' + err);
-						self.stopInterval();
+				self.INTERVAL = setInterval(async (self) => {
+					try {
+						const data = await self.readFile()
+						self.filecontents = data.toString()
+					} catch (error) {
+						// die silently
 					}
-					else {
-						self.updateStatus(InstanceStatus.Ok);
-						self.filecontents = data;
-						self.datetime = new Date().toISOString().replace('T', ' ').substr(0, 19);
-						self.checkVariables();
-					}
-				});
+				}, rate, self);
 			}
 			else {
-				self.updateStatus(InstanceStatus.ConnectionFailure, 'File Does Not Exist');
-				self.checkFeedbacks();
-				
-				if (self.config.verbose) {
-					self.log('debug', 'File Does Not Exist: ' + path);
-				}
-
-				self.EXISTS = false;
-				self.stopInterval();
-			}			
-		}
-		catch(error) {
-			self.log('error', 'Error Reading File: ' + error);
+				self.log('info', 'Retry Rate is 0. Module will open file one time and not read it again unless manually activated.');
+			}
+		} catch (error) {
+			self.log('error', `Can't open file: ${error}`)
 		}
 	},
 
-	readFileCustom(path, encoding, customVariable) {
+	/**
+	 * Reads a file async and returns the content
+	 * @param {string} path defaults to configured path
+	 * @param {string} encoding defaults to configured encoding
+	 * @returns {Promise<Buffer>}
+	 */
+	async readFile(path = this.config.path, encoding = this.config.encoding) {
 		let self = this;
-
-		try {
-			if (self.config.verbose) {
-				self.log('debug', 'Opening File: ' + path);
-			}
+		if (self.config.verbose) {
+			self.log('debug', 'Opening File: ' + path);
+		}
 	
-			fs.readFile(path, encoding, (err, data) => {
+		return new Promise((resolve, reject) => {
+
+			fs.access(path, fs.constants.R_OK, (err) => {
 				if (err) {
-					self.log('error', 'Error reading custom file path: ' + err);
+					self.updateStatus(InstanceStatus.ConnectionFailure, 'File Does Not Exist');
+					self.checkFeedbacks();
+				
+					if (self.config.verbose) {
+						self.log('debug', 'File Does Not Exist: ' + path);
+					}
+
+					self.EXISTS = false;
+					self.stopInterval();
+					reject(new Error('File does not exist or is not readable: ' + path))
+
+				} else {
+					self.updateStatus(InstanceStatus.Ok);
+					self.EXISTS = true;
+					self.checkFeedbacks();
+
+					if (self.config.verbose) {
+						self.log('debug', 'Reading File: ' + path);
+					}
+
+					fs.readFile(path, encoding, (err, data) => {
+						if (err) {
+							self.updateStatus(InstanceStatus.BadConfig, 'Error Reading File');
+							self.log('error', 'Error reading file: ' + err);
+							self.stopInterval();
+							reject(new Error('Error reading file: ' + err))
+						}
+						else {
+							self.updateStatus(InstanceStatus.Ok);
+							self.datetime = new Date().toISOString().replace('T', ' ').substring(0, 19);
+							self.checkVariables()
+							resolve(data)
+						}
+					})
+
 				}
-				else {
-					self.setCustomVariableValue(customVariable, data);
-				}
-			});
+    	})
+		})
+	},
+
+	/**
+	 * Reads a file and puts content into a custom variable async
+	 * @param {string} path 
+	 * @param {string} encoding 
+	 * @param {string} customVariable 
+	 * @returns {Promise}
+	 */
+	async readFileCustom(path, encoding, customVariable) {
+		let self = this;
+		if (self.config.verbose) {
+			self.log('debug', 'Opening File: ' + path);
 		}
-		catch(error) {
-			self.log('error', 'Error Reading custom file path: ' + error);
+		
+		try {
+			const data = await this.readFile(path, encoding)
+			await self.setCustomVariableValue(customVariable, data)
+		} catch (error) {
+			self.log('error', 'Reading file and writing to custom variable failed: ' + error)
+			throw(error)
 		}
 	},
 
-	readLine(lineNumber, path, customVariable) {
-		let self = this;
+	/**
+	 * Reads and returns a line from the file async
+	 * @param {number} lineNumber 
+	 * @param {string} path 
+	 * @returns {Promise<string>}
+	 */
+	async readLine(lineNumber, path) {
+    let lineIndex = 0;
 
-		let lineIndex = 0;
+    if (this.config?.verbose) {
+        this.log('debug', 'Opening File: ' + path);
+        this.log('debug', 'Reading Line: ' + lineNumber);
+    }
 
-		try {
-			if (self.config.verbose) {
-				self.log('debug', 'Opening File: ' + path);
-				self.log('debug', 'Reading Line: ' + lineNumber);
-			}
+    return new Promise((resolve, reject) => {
+        const fileStream = fs.createReadStream(path);
 
-			const fileStream = fs.createReadStream(path);
+        fileStream.on('error', (err) => {
+            this.log?.('error', 'Error opening file: ' + err);
+            reject(err);
+        });
 
-			const rl = readline.createInterface({
-				input: fileStream,
-				crlfDelay: Infinity
-			});
+        const rl = readline.createInterface({
+            input: fileStream,
+            crlfDelay: Infinity
+        });
 
-			rl.on('line', (line) => {
-				lineIndex++;
-				if (lineIndex == lineNumber) {
-					self.setCustomVariableValue(customVariable, line);
-					rl.close();
-				}
-			});
-		}
-		catch(error) {
-			self.log('error', 'Error Reading Line Number: ' + error);
-		}
+        rl.on('line', (line) => {
+            lineIndex++;
+            if (lineIndex === lineNumber) {
+                rl.close();
+                resolve(line);
+            }
+        });
+
+        rl.on('close', () => {
+            if (lineIndex < lineNumber) {
+                reject(new Error('Line number out of range'));
+            }
+        });
+
+        rl.on('error', (err) => {
+            this.log?.('error', 'Error reading line: ' + err);
+            reject(err);
+        });
+    });
 	},
 
 	stopInterval() {

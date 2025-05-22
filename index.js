@@ -58,7 +58,6 @@ class GenericFileReaderInstance extends InstanceBase {
 		this.initPresets();
 
 		this.checkVariables();
-		this.checkFeedbacks();
 
 		// Quickly check if certain config values are present and continue setup
 		if (this.config.path !== '') {
@@ -67,7 +66,16 @@ class GenericFileReaderInstance extends InstanceBase {
 			}
 
 			this.updateStatus(InstanceStatus.Connecting, 'Opening File...');
-			this.openFile();
+			try {
+				await this.openFile();
+				this.updateStatus(InstanceStatus.Ok);
+				this.checkVariables();
+				this.checkFeedbacks();
+			} catch (error) {
+				this.updateStatus(InstanceStatus.ConnectionFailure)
+				this.log('error', `Can't open file: ${error}`)
+				// don't throw
+			}
 		}
 	}
 

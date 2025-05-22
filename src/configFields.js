@@ -29,7 +29,7 @@ module.exports = {
 				type: 'number',
 				id: 'rate',
 				width: 6,
-				label: 'Re-Read Rate (in ms) (set to 0 to read file once and not again unless manually activated)',
+				label: 'Re-Read Rate (in ms) (minimum interval is 1000ms, set to 0 to read file once and not again unless manually activated)',
 				default: 60000
 			},
 			{
