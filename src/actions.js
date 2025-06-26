@@ -8,7 +8,13 @@ module.exports = {
 			name: 'Read File Now',
 			options: [],
 			callback: async function (action) {
-				self.readFile();
+				try {
+					const data = await self.readFile()
+					self.filecontents = data.toString()
+				} catch (error) {
+					self.log('error', 'Reading file failed: ' + error)
+					throw(error)
+				}
 			}
 		};
 

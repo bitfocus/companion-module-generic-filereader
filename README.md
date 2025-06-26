@@ -3,6 +3,11 @@ See [HELP.md](./HELP.md) and [LICENSE](./LICENSE)
 
 ## Version History
 
+### 2.2.1 (2025-06-26)
+* Bugfix: Read File Now action was not updating the module variables
+* Chore: Bump Companion-base to 1.4.3
+* Chore: Bump Companion-tools to 1.5.1
+
 ### 2.2.0 (2025-05-22)
 * Feature: Extend exist check to include if file is readable
 * Change: Repeated file read interval now need to be at least 1000ms

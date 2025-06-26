@@ -25,7 +25,7 @@ class GenericFileReaderInstance extends InstanceBase {
 			...presets,			
 		})
 
-		this.filecontents = '';
+		this._filecontents = '';
 		this.datetime = '';
 
 		this.ENCODING_TYPES = [
@@ -36,6 +36,15 @@ class GenericFileReaderInstance extends InstanceBase {
 			{ id: 'base64url', label: 'base64url'},
 			{ id: 'hex', label: 'hex'}
 		];
+	}
+
+	get filecontents() {
+		return this._filecontents
+	}
+
+	set filecontents(value) { 
+		this._filecontents = value
+		this.checkVariables()
 	}
 
 	async init(config) {
