@@ -14,6 +14,6 @@
 		"url": "git+https://github.com/bitfocus/companion-module-generic-filereader.git"
 	},
 	"devDependencies": {
-		"@companion-module/tools": "^1.5.1"
+		"@companion-module/tools": "^1.5.2"
 	}
 }
