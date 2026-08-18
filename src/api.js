@@ -6,31 +6,41 @@ const readline = require('readline');
 module.exports = {
 	async openFile() {
 		let self = this;
-		
-		const rate = self.config.rate;
 
-		try {
-			const data = await self.readFile()
-			self.filecontents = data.toString()
-	
-			if (rate > 999) {
-				if (self.config.verbose) {
-					self.log('debug', 'Creating Interval. File will be read every ' + rate + ' ms.');
-				}
-				self.INTERVAL = setInterval(async (self) => {
-					try {
-						const data = await self.readFile()
-						self.filecontents = data.toString()
-					} catch (error) {
-						// die silently
-					}
-				}, rate, self);
+		const rate = self.config.rate;
+		let readInProgress = false;
+
+		// Starting the reader again must replace the existing timer instead of
+		// creating an additional polling loop.
+		self.stopInterval();
+
+		const pollFile = async () => {
+			if (readInProgress) {
+				return;
 			}
-			else {
-				self.log('info', 'Retry Rate is 0. Module will open file one time and not read it again unless manually activated.');
+
+			readInProgress = true;
+			try {
+				const data = await self.readFile()
+				self.filecontents = data.toString()
+			} catch (error) {
+				// readFile updates the connection status. Keep the timer alive so a
+				// later path or filesystem recovery can be detected automatically.
+			} finally {
+				readInProgress = false;
 			}
-		} catch (error) {
-			self.log('error', `Can't open file: ${error}`)
+		};
+
+		await pollFile();
+
+		if (rate > 999) {
+			if (self.config.verbose) {
+				self.log('debug', 'Creating Interval. File will be read every ' + rate + ' ms.');
+			}
+			self.INTERVAL = setInterval(pollFile, rate);
+		}
+		else {
+			self.log('info', 'Retry Rate is 0. Module will open file one time and not read it again unless manually activated.');
 		}
 	},
 
@@ -58,7 +68,6 @@ module.exports = {
 					}
 
 					self.EXISTS = false;
-					self.stopInterval();
 					reject(new Error('File does not exist or is not readable: ' + path))
 
 				} else {
@@ -74,7 +83,6 @@ module.exports = {
 						if (err) {
 							self.updateStatus(InstanceStatus.BadConfig, 'Error Reading File');
 							self.log('error', 'Error reading file: ' + err);
-							self.stopInterval();
 							reject(new Error('Error reading file: ' + err))
 						}
 						else {
