@@ -77,7 +77,6 @@ class GenericFileReaderInstance extends InstanceBase {
 			this.updateStatus(InstanceStatus.Connecting, 'Opening File...');
 			try {
 				await this.openFile();
-				this.updateStatus(InstanceStatus.Ok);
 				this.checkVariables();
 				this.checkFeedbacks();
 			} catch (error) {
