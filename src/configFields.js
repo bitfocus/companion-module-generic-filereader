@@ -15,6 +15,8 @@ module.exports = {
 				id: 'path',
 				width: 6,
 				label: 'File Path',
+				description: 'File path to read. Accepts Companion variables, for example $(custom:file_root)/folder/file.txt',
+				useVariables: true,
 				default: ''
 			},
 			{
