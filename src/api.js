@@ -42,6 +42,8 @@ module.exports = {
 	 */
 	async readFile(path = this.config.path, encoding = this.config.encoding) {
 		let self = this;
+		path = await self.parseVariablesInString(path);
+
 		if (self.config.verbose) {
 			self.log('debug', 'Opening File: ' + path);
 		}
@@ -120,6 +122,7 @@ module.exports = {
 	 */
 	async readLine(lineNumber, path) {
     let lineIndex = 0;
+	path = await this.parseVariablesInString(path);
 
     if (this.config?.verbose) {
         this.log('debug', 'Opening File: ' + path);

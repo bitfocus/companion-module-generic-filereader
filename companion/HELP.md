@@ -2,7 +2,7 @@
 This module will allow you to read a local file and pull the contents into a Variable.
 
 ## Configuration
-* Enter the file path.
+* Enter the file path. Companion variables are supported, for example `$(custom:file_root)/folder/file.txt`.
 * Re-Read Rate:  
   how often to re-open the file and read the contents again   
   Set to minimum 1000ms  

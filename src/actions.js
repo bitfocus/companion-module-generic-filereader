@@ -44,8 +44,7 @@ module.exports = {
 				},
 			],
 			callback: async function (action) {
-				let path = await self.parseVariablesInString(action.options.path)
-				await self.readFileCustom(path, action.options.encoding, action.options.customVariable);
+				await self.readFileCustom(action.options.path, action.options.encoding, action.options.customVariable);
 			}
 		};
 
@@ -78,7 +77,7 @@ module.exports = {
 					return Promise.reject('No custom variable given for Read Specific Line')
 				}
 
-				const lineData = await self.readLine(lineNumber, `${self.config.path}`)
+				const lineData = await self.readLine(lineNumber, self.config.path)
 				self.setCustomVariableValue(action.options.customVariable, lineData)
 			}
 		};
@@ -110,8 +109,6 @@ module.exports = {
 			],
 			callback: async function (action) {
 				let line = await self.parseVariablesInString(action.options.line);
-				let path = await self.parseVariablesInString(action.options.path);
-
 				let lineNumber = parseInt(line);
 				if (isNaN(lineNumber)) {
 					self.log('error', 'Line Number must be an integer');
@@ -121,12 +118,12 @@ module.exports = {
 					self.log('error', 'No custom variable given for Read Specific Line');
 					return Promise.reject('No custom variable given for Read Specific Line')
 				}
-				if (!path) {
+				if (!action.options.path) {
 					self.log('error', 'No path given for Read Specific Line');
 					return Promise.reject('No custom variable given for Read Specific Line')
 				}
 
-				const lineData = await self.readLine(lineNumber, path)
+				const lineData = await self.readLine(lineNumber, action.options.path)
 				self.setCustomVariableValue(action.options.customVariable, lineData)
 			}
 		};
